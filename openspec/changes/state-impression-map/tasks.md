@@ -1,8 +1,8 @@
 ## 1. Backend — per-state aggregate
 
-- [ ] 1.1 Repository (`JdbcClient`): grouped `count(*)` by `state_id` joined to `states.name`, plus a `WHERE state_id IS NULL` count and a total
-- [ ] 1.2 DTO + `@RestController` `GET /api/impressions/by-state` → `{ total, unattributed, states: [{ state, count }] }`
-- [ ] 1.3 Test the endpoint against a seeded DB: sums reconcile (states + unattributed == total), Florida is the top state
+- [x] 1.1 Repository (`JdbcClient`): grouped `count(*)` by `state_id` joined to `states.name`, plus a `WHERE state_id IS NULL` count and a total
+- [x] 1.2 DTO + `@RestController` `GET /api/impressions/by-state` → `{ total, unattributed, states: [{ state, count }] }`
+- [x] 1.3 Testcontainers integration test: sums reconcile (states + unattributed == total), densest state ordered first. Also verified live: 200k, 2747 unattributed, Florida top
 
 ## 2. Frontend — data layer
 

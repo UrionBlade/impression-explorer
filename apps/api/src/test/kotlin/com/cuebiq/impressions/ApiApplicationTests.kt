@@ -1,13 +1,10 @@
 package com.cuebiq.impressions
 
 import org.junit.jupiter.api.Test
-import org.springframework.boot.test.context.SpringBootTest
 
-@SpringBootTest
-class ApiApplicationTests {
+class ApiApplicationTests : IntegrationTestBase() {
 
-	@Test
-	fun contextLoads() {
-	}
-
+    @Test
+    fun contextLoads() {
+    }
 }
