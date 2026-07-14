@@ -13,7 +13,7 @@ Constraints: Kotlin + Spring Boot backend (Cuebiq's stack), React + TS frontend,
 - Seed is idempotent and streams the CSV rather than buffering it in memory.
 
 **Non-Goals:**
-- The four analytical endpoints and the map/charts UI (later changes).
+- The four metrics themselves — each ships later as its own vertical slice (backend query + endpoint + frontend view together). This change only provides the shell they render into.
 - Streaming/incremental ingestion, CDC, or a real ETL scheduler — this is a one-shot batch load of a fixed file.
 - Time-zone-correct "hour of day" and Black Friday windowing — the schema stores a `timestamptz` that supports both; the definitions land in `analytics-api`.
 - Auth, multi-tenancy, horizontal scaling.
@@ -31,6 +31,14 @@ Constraints: Kotlin + Spring Boot backend (Cuebiq's stack), React + TS frontend,
 **Flyway owns the schema as a dedicated step, not the API.** Migrations run as their own unit (a one-shot compose service / `task migrate`) so schema and seed can be established without starting Spring Boot, and migrations stay plain reviewable SQL. Spring Boot connects to an already-migrated DB (Flyway in `validate` mode) rather than being the migration authority. Chosen over Liquibase for raw-SQL transparency.
 
 **Idempotency via truncate-and-load, not upsert.** This is a batch load of a fixed file, not a merge. `TRUNCATE` + reload is simpler and provably convergent; there is no natural business key on an impression (duplicate `device_id/ts/coord` rows are legitimate). Re-running the seed yields identical counts.
+
+**i18n: minimal in-house layer over `Intl`, not a translation framework.** A React context holds the active locale; strings live in `en.json` / `it.json` catalogs behind a small `t(key)` hook; numbers and dates go through the platform-native `Intl.NumberFormat` / `Intl.DateTimeFormat` keyed on the locale. For two languages and a bounded string set this is a few lines and no runtime dependency, and a catalog-parity check keeps the two files in sync. `react-i18next` is the drop-in upgrade if we later need pluralization rules, nesting, or lazy-loaded namespaces — not warranted yet. The switcher persists the choice in `localStorage`.
+
+**Motion stack with an explicit division of labor.** The product is animated throughout, so the three requested libraries each own a lane to avoid overlap and jank: Lenis drives smooth scrolling; GSAP + ScrollTrigger handle scroll-driven sequences and data/chart animations (count-ups, bars/areas drawing, choropleth fills); Framer Motion handles React component/layout transitions and micro-interactions. GSAP and Framer Motion overlap in principle — the boundary is "animating DOM/canvas values and timelines" (GSAP) vs "animating React components in/out and layout" (Framer Motion). A single motion entry point installs Lenis and a global `prefers-reduced-motion` guard that reduces or removes animation; respecting it is a requirement, not a nicety. This is a deliberate, user-requested richness beyond the minimum — noted as such.
+
+**Design guidelines captured once, up front.** The `teach-impeccable` step records the project's design context (elegant/editorial, dark-default dual theme, Cuebiq-logo-derived palette, medium density) in `.impeccable.md`, so every per-metric UI stays visually consistent without re-deciding style each time.
+
+**Work is sliced vertically after this change.** `bootstrap-platform` is the only horizontal (shared-infra) change. Each following change delivers one metric end-to-end — its SQL query, its API endpoint, and its frontend view (in both languages) — so history reads as working product increments rather than half-built layers. Cross-cutting design guidelines are captured once here (via the `teach-impeccable` design-context step) so those per-metric UIs stay visually consistent.
 
 **Turborepo for the monorepo, even though the API is JVM.** Turborepo orchestrates the JS side natively and runs the Kotlin build through a wrapped task; it gives one task graph, cached web builds, and one `dev` entrypoint. Gradle stays the authority for the Kotlin module. Alternative (Gradle multi-project owning everything, or Nx) rejected: heavier for a two-app repo and less idiomatic for the React side.
 
