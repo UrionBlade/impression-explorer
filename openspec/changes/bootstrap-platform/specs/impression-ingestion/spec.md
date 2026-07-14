@@ -2,12 +2,12 @@
 
 ### Requirement: US states reference data
 
-The system SHALL load the US-states GeoJSON (`assets/map.json`) into a `states` reference table, storing each state's name and its polygon coordinates, so the seed can resolve impressions to states and the API can label states by id.
+The system SHALL populate a `states` reference table with one row per US state from the GeoJSON (`assets/map.json`), keyed by a stable name, so impressions can reference a state by id and the frontend can join aggregates back to the map by name. Polygon geometry is read from `map.json` by the seed for the join and by the frontend for rendering; it is not duplicated in the database.
 
 #### Scenario: States table populated from GeoJSON
 
 - **WHEN** the seed runs against an empty database
-- **THEN** the `states` table contains one row per feature in `map.json`, each with a non-null name and non-empty polygon coordinates
+- **THEN** the `states` table contains one row per state feature in `map.json`, each with a non-null, unique name
 
 ### Requirement: Impression bulk load
 
