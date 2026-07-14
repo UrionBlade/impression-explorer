@@ -4,6 +4,21 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Impression Explorer</title>
+    <script>
+      // Set theme + lang before paint to avoid a flash. Dark is the default;
+      // language follows the browser (Italian → it, otherwise English).
+      (function () {
+        var el = document.documentElement;
+        try {
+          var t = localStorage.getItem("theme");
+          el.setAttribute("data-theme", t === "light" ? "light" : "dark");
+        } catch (e) {
+          el.setAttribute("data-theme", "dark");
+        }
+        var lang = (navigator.language || "en").toLowerCase();
+        el.setAttribute("lang", lang.indexOf("it") === 0 ? "it" : "en");
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

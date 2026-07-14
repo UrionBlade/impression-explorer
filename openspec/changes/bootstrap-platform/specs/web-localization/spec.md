@@ -1,19 +1,18 @@
 ## ADDED Requirements
 
-### Requirement: Bilingual UI (Italian and English)
+### Requirement: Bilingual UI with browser-based language
 
-The frontend SHALL render all user-facing text in either Italian or English, selected at runtime, with English as the default when no preference is known.
+The frontend SHALL render all user-facing text in Italian or English, choosing the language from the browser's preferred language, and falling back to English for any language it does not support. There is no manual language switcher.
 
-#### Scenario: Default language
+#### Scenario: Italian browser renders Italian
 
-- **WHEN** a user opens the app with no prior language preference
+- **WHEN** a user whose browser prefers Italian opens the app
+- **THEN** the UI renders in Italian
+
+#### Scenario: Unsupported browser language falls back to English
+
+- **WHEN** a user whose browser prefers a language other than Italian or English opens the app
 - **THEN** the UI renders in English
-
-#### Scenario: Switching language
-
-- **WHEN** the user selects the other language from the language switcher
-- **THEN** all visible UI text updates to that language without a full page reload
-- **AND** the choice persists across reloads
 
 ### Requirement: No hard-coded user-facing strings
 

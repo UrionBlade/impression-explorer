@@ -1,0 +1,21 @@
+{
+  "app.title": "Impression Explorer",
+  "app.tagline": "Scopri dove si concentrano le impression pubblicitarie negli USA.",
+  "nav.language": "Lingua",
+  "nav.theme": "Cambia tema",
+  "hero.eyebrow": "Analisi di mobilità",
+  "hero.title": "Ogni impression, sulla mappa.",
+  "hero.lead": "Lo sguardo dell'analista su {count} visualizzazioni pubblicitarie negli Stati Uniti — per stato, per dispositivo, per ora e negli anni.",
+  "stats.impressions": "impression",
+  "stats.states": "stati USA",
+  "stats.devices": "dispositivi",
+  "stats.years": "anni coperti",
+  "section.map.title": "Densità delle impression",
+  "section.map.body": "Il fulcro è una choropleth delle impression per stato — in arrivo nella prossima fetta.",
+  "section.questions.title": "Le domande",
+  "section.q.device": "Impression per dispositivo",
+  "section.q.hour": "Impression per ora del giorno",
+  "section.q.state": "Impression per stato USA",
+  "section.q.blackfriday": "Andamento del Black Friday negli anni",
+  "footer.note": "Realizzato per la challenge full-stack di Cuebiq."
+}

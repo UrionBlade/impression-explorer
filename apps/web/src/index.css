@@ -1,24 +1,71 @@
 @import "tailwindcss";
 
-/* Cuebiq brand palette, sampled from the official logo (see .impeccable.md).
-   Full dual-theme tokens + toggle land in the frontend-foundation tasks;
-   this is the base so the shell already renders on-brand. */
+/* Manual theme switch via [data-theme] (set by ThemeProvider), dark is default. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 @theme {
+  /* Cuebiq brand palette, sampled from the official logo (see .impeccable.md). */
   --color-navy: #232842;
-  --color-navy-900: #11152a;
-  --color-navy-800: #1a2140;
   --color-cuebiq-blue: #3d6db5;
   --color-cuebiq-blue-light: #7fa8d9;
   --color-cuebiq-teal: #2ac3c4;
+
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, ui-serif, serif;
 }
 
-:root {
+/* Semantic tokens → Tailwind utilities (bg-canvas, text-ink, border-line, …). */
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-elevated: var(--elevated);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-line: var(--line);
+}
+
+/* Dark is the default theme (matches .impeccable.md). */
+:root,
+[data-theme="dark"] {
   color-scheme: dark;
+  --canvas: #0f1324;
+  --surface: #171d33;
+  --elevated: #1f2742;
+  --ink: #e8ecf5;
+  --muted: #97a1bd;
+  --accent: #7fa8d9;
+  --line: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+  --canvas: #f6f8fc;
+  --surface: #ffffff;
+  --elevated: #ffffff;
+  --ink: #232842;
+  --muted: #5a6478;
+  --accent: #3d6db5;
+  --line: rgba(35, 40, 66, 0.1);
 }
 
 body {
   margin: 0;
-  background: var(--color-navy-900);
-  color: #e8ecf5;
-  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: var(--canvas);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 0.4s ease, color 0.4s ease;
+}
+
+/* Respect the user's motion preference globally as a safety net. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

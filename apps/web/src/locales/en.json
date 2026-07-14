@@ -1,0 +1,21 @@
+{
+  "app.title": "Impression Explorer",
+  "app.tagline": "See where US advertising impressions concentrate.",
+  "nav.language": "Language",
+  "nav.theme": "Toggle theme",
+  "hero.eyebrow": "Mobility analytics",
+  "hero.title": "Every impression, placed on the map.",
+  "hero.lead": "An analyst's lens on {count} ad views across the United States — by state, by device, by hour, and through the years.",
+  "stats.impressions": "impressions",
+  "stats.states": "US states",
+  "stats.devices": "devices",
+  "stats.years": "years covered",
+  "section.map.title": "Impression density",
+  "section.map.body": "A choropleth of impressions per state is the centrepiece — coming in the next slice.",
+  "section.questions.title": "The questions",
+  "section.q.device": "Impressions per device",
+  "section.q.hour": "Impressions per hour of day",
+  "section.q.state": "Impressions per US state",
+  "section.q.blackfriday": "Black Friday rate through the years",
+  "footer.note": "Built for the Cuebiq full-stack challenge."
+}
