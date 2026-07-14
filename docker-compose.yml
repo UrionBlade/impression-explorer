@@ -1,0 +1,80 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-impressions}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-impressions}
+      POSTGRES_DB: ${POSTGRES_DB:-impressions}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-impressions} -d ${POSTGRES_DB:-impressions}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # One-shot schema migration. Runs to completion and exits.
+  flyway:
+    image: flyway/flyway:11
+    command: migrate
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      FLYWAY_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-impressions}
+      FLYWAY_USER: ${POSTGRES_USER:-impressions}
+      FLYWAY_PASSWORD: ${POSTGRES_PASSWORD:-impressions}
+      FLYWAY_CONNECT_RETRIES: "10"
+    volumes:
+      - ./db/migrations:/flyway/sql:ro
+
+  # One-shot data load (states geo-join + impressions COPY). Runs after migrate and exits.
+  seed:
+    image: impression-explorer/api:local
+    build:
+      context: ./apps/api
+    command: ["--spring.profiles.active=seed"]
+    depends_on:
+      flyway:
+        condition: service_completed_successfully
+    environment:
+      DATABASE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-impressions}
+      POSTGRES_USER: ${POSTGRES_USER:-impressions}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-impressions}
+      SEED_STATES_GEOJSON: /assets/map.json
+      SEED_IMPRESSIONS_CSV: /assets/impressions.csv
+    volumes:
+      - ./assets:/assets:ro
+
+  api:
+    image: impression-explorer/api:local
+    build:
+      context: ./apps/api
+    depends_on:
+      flyway:
+        condition: service_completed_successfully
+    environment:
+      DATABASE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-impressions}
+      POSTGRES_USER: ${POSTGRES_USER:-impressions}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-impressions}
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/localhost/8080'"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    depends_on:
+      - api
+    ports:
+      - "3000:80"
+
+volumes:
+  pgdata:

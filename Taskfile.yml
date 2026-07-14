@@ -1,0 +1,65 @@
+version: "3"
+
+dotenv: [".env"]
+
+env:
+  # Gradle needs a JDK 17+ to run (system default may be older). Override by
+  # exporting JAVA_HOME; otherwise fall back to Homebrew's openjdk@21.
+  JAVA_HOME:
+    sh: echo "${JAVA_HOME:-/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home}"
+
+tasks:
+  up:
+    desc: Start PostgreSQL
+    cmds:
+      - docker compose up -d postgres
+
+  down:
+    desc: Stop everything (add -v to drop the volume)
+    cmds:
+      - docker compose down {{.CLI_ARGS}}
+
+  migrate:
+    desc: Apply Flyway schema migrations
+    cmds:
+      - docker compose run --rm flyway
+
+  seed:
+    desc: Load states + impressions (geo-join at ingest). Idempotent.
+    deps: [migrate]
+    dir: apps/api
+    env:
+      SEED_STATES_GEOJSON: "{{.ROOT_DIR}}/assets/map.json"
+      SEED_IMPRESSIONS_CSV: "{{.ROOT_DIR}}/assets/impressions.csv"
+    cmds:
+      - ./gradlew bootRun --args='--spring.profiles.active=seed' --console=plain
+
+  dev:
+    desc: Run web (Vite HMR) + api (Spring devtools auto-restart) together
+    deps: [dev:web, dev:api, dev:api-watch]
+
+  dev:web:
+    internal: true
+    dir: apps/web
+    cmds: [pnpm dev]
+
+  dev:api:
+    internal: true
+    dir: apps/api
+    cmds: [./gradlew bootRun]
+
+  # Continuous compile: recompiles on save so Spring devtools restarts the context.
+  dev:api-watch:
+    internal: true
+    dir: apps/api
+    cmds: [./gradlew -t classes]
+
+  build:
+    desc: Build all apps
+    cmds:
+      - turbo run build
+
+  psql:
+    desc: Open a psql shell on the database
+    cmds:
+      - docker compose exec postgres psql -U ${POSTGRES_USER} -d ${POSTGRES_DB}

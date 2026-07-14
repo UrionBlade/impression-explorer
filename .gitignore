@@ -20,5 +20,8 @@ apps/api/bin/
 .DS_Store
 *.log
 
-# Reado: keep review artifacts (comments/tasks/progress), ignore personal UI prefs
+# Reado: keep the review record (archive/comments/sessions/progress) committed
+# on purpose; ignore personal UI prefs and transient preview/runtime state.
 .reado/config.json
+.reado/preview-*.json
+.reado/resolve-loop.json

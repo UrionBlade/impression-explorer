@@ -1,0 +1,12 @@
+# Keep the web build context small (Dockerfile builds from repo root).
+**/node_modules
+**/dist
+**/build
+**/.gradle
+**/.turbo
+.git
+.reado
+.idea
+assets
+openspec
+*.log
