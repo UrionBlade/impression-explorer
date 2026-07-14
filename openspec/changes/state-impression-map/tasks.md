@@ -1,0 +1,31 @@
+## 1. Backend — per-state aggregate
+
+- [ ] 1.1 Repository (`JdbcClient`): grouped `count(*)` by `state_id` joined to `states.name`, plus a `WHERE state_id IS NULL` count and a total
+- [ ] 1.2 DTO + `@RestController` `GET /api/impressions/by-state` → `{ total, unattributed, states: [{ state, count }] }`
+- [ ] 1.3 Test the endpoint against a seeded DB: sums reconcile (states + unattributed == total), Florida is the top state
+
+## 2. Frontend — data layer
+
+- [ ] 2.1 Add `@tanstack/react-query` + `d3-geo`; `QueryClientProvider` in `main.tsx`
+- [ ] 2.2 Typed `useImpressionsByState` hook fetching `/api/impressions/by-state`
+- [ ] 2.3 Serve `map.json` as a static asset in `apps/web/public`
+
+## 3. Frontend — choropleth
+
+- [ ] 3.1 Project `map.json` with `geoAlbersUsa().fitSize([975,610])` → per-state SVG paths (memoised)
+- [ ] 3.2 Quantised sequential colour scale (teal → blue → navy), ~6 bins; "no data" tone for states without a count
+- [ ] 3.3 `UsChoropleth` organism: render paths, join counts by name, colour; shapes render before data (skeleton) 
+- [ ] 3.4 Hover/focus interaction → tooltip with state name, count, share; states keyboard-focusable
+- [ ] 3.5 Legend molecule mapping bins to numeric ranges
+- [ ] 3.6 Reduced-motion-aware reveal (GSAP stagger; final state under reduced motion)
+- [ ] 3.7 Loading skeleton + non-blaming error state with retry
+
+## 4. Page integration
+
+- [ ] 4.1 Rework `HomePage`: map as the centrepiece, remove the empty placeholder, leave room for later metric charts
+- [ ] 4.2 Surface the unattributed count (footnote/callout) and keep copy in both IT/EN catalogs
+
+## 5. Verify
+
+- [ ] 5.1 End-to-end against the seeded stack: counts render, Florida/Texas/NY read as the densest; hover/legend correct
+- [ ] 5.2 Reduced-motion and both themes/languages check; endpoint + frontend build/tests green
