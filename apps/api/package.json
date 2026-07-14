@@ -1,0 +1,9 @@
+{
+  "name": "@impression-explorer/api",
+  "private": true,
+  "scripts": {
+    "build": "./gradlew assemble",
+    "dev": "./gradlew bootRun",
+    "test": "./gradlew test"
+  }
+}

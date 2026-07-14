@@ -1,10 +1,10 @@
 ## 1. Monorepo skeleton
 
-- [ ] 1.1 Initialize Turborepo at the root (`package.json`, `turbo.json`, `pnpm-workspace.yaml`) with `apps/*` and `db/` workspaces
-- [ ] 1.2 Add root `.gitignore` (node_modules, build output, `.gradle`, `target`, env files)
-- [ ] 1.3 Scaffold `apps/api` as a minimal Kotlin + Spring Boot project (Gradle Kotlin DSL, boots and exposes `/actuator/health`)
-- [ ] 1.4 Scaffold `apps/web` as a React + Vite + TypeScript app with Tailwind wired up (renders an app shell)
-- [ ] 1.5 Wire a Turborepo task that runs the Gradle build for `apps/api`
+- [x] 1.1 Initialize Turborepo at the root (`package.json`, `turbo.json`, `pnpm-workspace.yaml`) with `apps/*` workspaces
+- [x] 1.2 Add root `.gitignore` (node_modules, build output, `.gradle`, env files; keep `.reado/` review artifacts, drop personal UI prefs)
+- [x] 1.3 Scaffold `apps/api` as a Kotlin + Spring Boot project (Gradle Kotlin DSL, Boot 4.1 / Kotlin 2.3 / JDK 21 toolchain) — `assemble` builds clean
+- [x] 1.4 Scaffold `apps/web` as a React + Vite + TypeScript app with Tailwind 4 wired up (renders an app shell) — `build` passes
+- [x] 1.5 Wire a Turborepo task that runs the Gradle build for `apps/api` (`@impression-explorer/api` build → `./gradlew assemble`)
 
 ## 2. Database schema (Flyway)
 

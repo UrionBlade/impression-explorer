@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+build/
+.turbo/
+*.tsbuildinfo
+
+# Gradle / JVM
+.gradle/
+apps/api/bin/
+
+# Env
+.env
+.env.local
+
+# Editor / OS
+.DS_Store
+*.log
+
+# Reado: keep review artifacts (comments/tasks/progress), ignore personal UI prefs
+.reado/config.json

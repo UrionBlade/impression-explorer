@@ -1,0 +1,24 @@
+@import "tailwindcss";
+
+/* Cuebiq brand palette, sampled from the official logo (see .impeccable.md).
+   Full dual-theme tokens + toggle land in the frontend-foundation tasks;
+   this is the base so the shell already renders on-brand. */
+@theme {
+  --color-navy: #232842;
+  --color-navy-900: #11152a;
+  --color-navy-800: #1a2140;
+  --color-cuebiq-blue: #3d6db5;
+  --color-cuebiq-blue-light: #7fa8d9;
+  --color-cuebiq-teal: #2ac3c4;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  background: var(--color-navy-900);
+  color: #e8ecf5;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
