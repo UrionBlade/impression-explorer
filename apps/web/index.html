@@ -5,14 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Impression Explorer</title>
     <script>
-      // Set the theme before paint to avoid a flash (dark is the default).
+      // Set the theme before paint to avoid a flash (light is the default).
       // Language is route-based (/it, /en) and applied by the app.
       (function () {
         try {
           var t = localStorage.getItem("theme");
-          document.documentElement.setAttribute("data-theme", t === "light" ? "light" : "dark");
+          document.documentElement.setAttribute("data-theme", t === "dark" ? "dark" : "light");
         } catch (e) {
-          document.documentElement.setAttribute("data-theme", "dark");
+          document.documentElement.setAttribute("data-theme", "light");
         }
       })();
     </script>
