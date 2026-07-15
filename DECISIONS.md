@@ -83,6 +83,10 @@ Options I rejected:
 - **The day before / a nearby day** — arbitrary, and itself distorted by the
   pre-Black-Friday ramp.
 - **A "typical day"** — vague, and easy to read as a hand-picked day.
+- **The November median, or the same weekday across November** — narrower and
+  more seasonal, but they compare Black Friday against a window that's *already*
+  lifted by the holiday-shopping build-up, which shrinks the very effect we're
+  measuring. The full-year mean is the neutral reference.
 
 What we use:
 - **Baseline = the mean daily volume of the rest of that year**
@@ -100,10 +104,12 @@ November** (the US convention), per year, in `America/New_York`.
   the US map, then stored as an indexed `state_id`. Per-state queries are a plain
   `GROUP BY`.
 - **51 "states"** includes the District of Columbia.
-- Impressions that fall **outside every US state polygon** (offshore points,
-  island fragments, bad coordinates) are **not silently dropped** — they're
-  counted as "unattributed" and shown as a footnote (`N impressions outside any
-  US state`). Hiding them would make the state totals quietly not add up.
+- The ≈2.7k impressions that fall **outside every US state polygon** (offshore
+  points, island fragments, bad coordinates) are **kept and labelled**, not
+  dropped and not snapped to the nearest state. Both alternatives are worse:
+  dropping them makes the state totals quietly not add up, and snapping invents a
+  location the data doesn't support. We count them as "unattributed" and show them
+  as a footnote (`N impressions outside any US state`).
 - The choropleth color scale is **theme-independent** (one fixed light ramp): the
   same count maps to the same color in light and dark mode, so switching theme
   never flips the reading of the map.
