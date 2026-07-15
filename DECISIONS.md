@@ -110,8 +110,6 @@ impressions, a few send thousands (max observed ≈13,351 against a mean of ≈2
 
 ## Cross-cutting UI rules
 
-- **Never render `NaN`.** Any non-finite value formats to `—`. A metric we can't
-  compute shows a dash, never `NaN`.
 - **Every chart has an accessible table** (`sr-only`) mirroring the data, and
   respects `prefers-reduced-motion` (charts render fully drawn, no animation).
 - **Chart animations trigger on scroll into view**, not on load, so the
