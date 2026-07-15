@@ -1,0 +1,258 @@
+{
+  "id": "s_19f64e9c014_e",
+  "title": "Review the current diff",
+  "scope": {
+    "kind": "diff"
+  },
+  "objective": "general",
+  "status": "in_review",
+  "position": 2,
+  "route": [
+    {
+      "file": "apps/web/src/main.tsx",
+      "priority": 1,
+      "reason": "App entry + new routing: the /:lang route, the redirect-to-detected-locale on unknown paths, and the provider tree order (Router must wrap LocaleProvider). This is the behaviour the user just probed (first-load redirect).",
+      "suggestedReviewMode": "normal",
+      "relatedFiles": [
+        "apps/web/src/i18n.tsx"
+      ]
+    },
+    {
+      "file": "apps/web/src/i18n.tsx",
+      "priority": 2,
+      "reason": "LocaleProvider now takes the locale from the route and setLocale navigates via useNavigate (must run inside the Router). Also holds detectLocale/isLocale, the language contract the whole app depends on.",
+      "suggestedReviewMode": "normal",
+      "relatedFiles": [
+        "apps/web/src/main.tsx",
+        "apps/web/src/components/molecules/LanguageSwitcher.tsx"
+      ]
+    },
+    {
+      "file": "apps/web/src/components/organisms/UsChoropleth.tsx",
+      "priority": 3,
+      "reason": "Largest diff (~104 lines): the Framer Motion hover-zoom overlay, the default-to-densest readout logic, active-state hover/focus management and fill selection. Most moving parts and the piece the user is iterating on visually.",
+      "suggestedReviewMode": "deep",
+      "relatedFiles": [
+        "apps/web/src/lib/choropleth.ts",
+        "apps/web/src/components/molecules/MapLegend.tsx"
+      ]
+    },
+    {
+      "file": "apps/web/src/components/molecules/LanguageSwitcher.tsx",
+      "priority": 4,
+      "reason": "New component: NavLink-based route switch. Check active styling, accessibility of the group, and that it only ever targets valid /:lang routes.",
+      "suggestedReviewMode": "quick",
+      "relatedFiles": [
+        "apps/web/src/i18n.tsx",
+        "apps/web/src/components/organisms/Header.tsx"
+      ]
+    },
+    {
+      "file": "apps/web/src/components/organisms/Header.tsx",
+      "priority": 5,
+      "reason": "Small change: mounts the LanguageSwitcher next to the ThemeToggle.",
+      "suggestedReviewMode": "quick",
+      "relatedFiles": [
+        "apps/web/src/components/molecules/LanguageSwitcher.tsx"
+      ]
+    },
+    {
+      "file": "apps/web/src/locales/en.json",
+      "priority": 6,
+      "reason": "Microcopy changes and new keys (map.densest, map.loading; removed map.hint; reworded section.map.body). Must stay key-for-key in parity with it.json (the vitest parity test guards this).",
+      "suggestedReviewMode": "quick",
+      "relatedFiles": [
+        "apps/web/src/locales/it.json"
+      ]
+    },
+    {
+      "file": "apps/web/index.html",
+      "priority": 7,
+      "reason": "Pre-hydration script trimmed to theme only (language is now route-based). Verify no flash regression and that removing the lang line is intentional.",
+      "suggestedReviewMode": "quick",
+      "relatedFiles": [
+        "apps/web/src/main.tsx"
+      ]
+    },
+    {
+      "file": "openspec/specs/web-localization/spec.md",
+      "priority": 8,
+      "reason": "Spec updated from browser-only to route-based + switcher. Check it matches the implemented behaviour (redirect + fallback + switch scenarios).",
+      "suggestedReviewMode": "quick",
+      "relatedFiles": [
+        "apps/web/src/main.tsx",
+        "apps/web/src/i18n.tsx"
+      ]
+    },
+    {
+      "file": "apps/web/package.json",
+      "priority": 9,
+      "reason": "Adds react-router-dom (and @types/geojson dev dep). Trivial; note the bundle-size impact flagged earlier.",
+      "suggestedReviewMode": "quick"
+    }
+  ],
+  "files": [
+    {
+      "file": "apps/web/src/main.tsx",
+      "state": "reviewed",
+      "summary": "Normal pass on the routing entry. Verified the redirect logic is sound: / and any unknown path hit the catch-all -> /${detectLocale()}; an unsupported language segment (e.g. /de) matches /:lang, fails isLocale, and redirects to the browser language; /it and /en render. No redirect loop. replace is used so the bare redirect leaves no history entry. Provider order is correct — LocaleProvider is inside BrowserRouter (needed for useNavigate), while QueryClient/Theme/Motion sit outside the Router so they persist across language switches (no refetch/re-init on /it<->/en). Raised: (1) routing is single-segment /:lang, so future sub-routes need /:lang/* and the catch-all currently drops the original path/query; (2) the redirect target /${detectLocale()} is duplicated in two places. Both are forward-looking, non-blocking. Minor unaddressed: first paint at / is blank until the client redirect runs (no SSR) — acceptable here. Next: i18n.tsx."
+    },
+    {
+      "file": "apps/web/src/i18n.tsx",
+      "state": "reviewed",
+      "summary": "Normal pass. The route-based LocaleProvider is sound: locale comes from the validated route param, setLocale navigates to /${l}, the lang attribute is synced via effect, and t() interpolates {name} placeholders with a locale→English→key fallback chain that is correct at runtime. isLocale/detectLocale are small and correct. Raised three notes: (1) the missing-key fallback is invisible to the type system (Record<string,string> indexing yields string, not string|undefined) so the vitest parity test is the real guard — noUncheckedIndexedAccess would align type with runtime; (2) LocaleProvider now hard-depends on a Router (useNavigate), so it cannot be mounted outside <BrowserRouter> and setLocale drops any sub-path; (3) detectLocale only inspects navigator.language, not the navigator.languages preference order. Also noted but not filed: the context value/t/setLocale are recreated each render (no useMemo) — negligible at this scale since LocaleProvider effectively only re-renders on locale change. All non-blocking. Next: UsChoropleth.tsx (deep)."
+    },
+    {
+      "file": "apps/web/src/components/organisms/UsChoropleth.tsx",
+      "state": "reviewed",
+      "summary": "Deep pass on the choropleth. Verified: project() memoised on map.data; scale recomputes on theme (needed for the per-theme ramp); the entrance effect targets only path[data-state] so the zoom overlay is excluded; reduced-motion is handled for both the entrance (gsap.set opacity 1) and the hover zoom (initial=false snaps to final); the hover/focus active-state logic (a === s.name ? null : a) survives moving between adjacent states in either event order; the zoom overlay is pointer-events-none so it never steals hover from the base paths; share is guarded against total=0; the retry error state refetches both queries. No correctness bug. Raised three notes: (1) GSAP animates path opacity while React also declares opacity:0 on the same paths — works only because React skips unchanged style writes, fragile; let GSAP own opacity; (2) the \"densest\" default (states[0]) couples to the endpoint ORDER BY count DESC; (3) ~50 tabbable paths with no non-visual/table equivalent. All non-blocking. Next: LanguageSwitcher.tsx."
+    },
+    {
+      "file": "apps/web/src/components/molecules/LanguageSwitcher.tsx",
+      "state": "reviewed"
+    },
+    {
+      "file": "apps/web/src/components/organisms/Header.tsx",
+      "state": "reviewed"
+    },
+    {
+      "file": "apps/web/src/locales/en.json",
+      "state": "reviewed"
+    },
+    {
+      "file": "apps/web/index.html",
+      "state": "reviewed"
+    },
+    {
+      "file": "openspec/specs/web-localization/spec.md",
+      "state": "reviewed"
+    },
+    {
+      "file": "apps/web/package.json",
+      "state": "reviewed"
+    }
+  ],
+  "proposals": [
+    {
+      "id": "p_19f64f2ce02_0",
+      "artifactType": "comment",
+      "state": "converted_to_task",
+      "file": "apps/web/src/main.tsx",
+      "startLine": 33,
+      "endLine": 34,
+      "type": "note",
+      "body": "Routing is single-segment: path=\"/:lang\" matches /it and /en but NOT a deeper path like /it/map, which falls through to the catch-all and redirects to /${detectLocale()} - dropping the original path and any query string. Fine while this is one page. When the later metric slices add routes, switch to \"/:lang/*\" with nested <Routes>, and consider carrying the original path through the redirect so a deep link resolves instead of bouncing to the language root.",
+      "author": "agent",
+      "agent": "claude-code",
+      "commentId": "c_19f64f3df27_10",
+      "createdAt": 1784105061890,
+      "updatedAt": 1784105131816
+    },
+    {
+      "id": "p_19f64f2ce06_0",
+      "artifactType": "comment",
+      "state": "converted_to_task",
+      "file": "apps/web/src/main.tsx",
+      "startLine": 18,
+      "endLine": 18,
+      "type": "refactor",
+      "body": "/${detectLocale()} is the redirect target in two places (this invalid-language guard, and the catch-all on line 34). Extracting a tiny <RedirectToDefaultLocale/> (or a shared const) keeps the default-language policy in one spot if it ever changes.",
+      "author": "agent",
+      "agent": "claude-code",
+      "commentId": "c_19f64f40197_11",
+      "createdAt": 1784105061894,
+      "updatedAt": 1784105140631
+    },
+    {
+      "id": "p_19f64f53e01_0",
+      "artifactType": "comment",
+      "state": "converted_to_task",
+      "file": "apps/web/src/i18n.tsx",
+      "startLine": 39,
+      "endLine": 39,
+      "type": "note",
+      "body": "The missing-key fallback (?? catalogs.en[key] ?? key) works at runtime (JS returns undefined for an absent key), but the type Record<Locale, Record<string,string>> makes catalogs[locale][key] a plain string, so TS sees the fallbacks as unreachable and will not warn about a missing key. The vitest catalog-parity test is the real guard here. Enabling noUncheckedIndexedAccess would make the type reflect runtime (string | undefined) and justify the fallback.",
+      "author": "agent",
+      "agent": "claude-code",
+      "commentId": "c_19f64f8f5ad_13",
+      "createdAt": 1784105221633,
+      "updatedAt": 1784105465262
+    },
+    {
+      "id": "p_19f64f53e05_0",
+      "artifactType": "comment",
+      "state": "discarded",
+      "file": "apps/web/src/i18n.tsx",
+      "startLine": 32,
+      "endLine": 46,
+      "type": "note",
+      "body": "LocaleProvider now hard-depends on a Router: useNavigate throws outside <BrowserRouter>, so the provider can no longer be mounted in isolation (a component test or Storybook would need a router wrapper). Also setLocale navigates to /${l} with no path, so from a future sub-route it would jump to the language root. Fine today; worth knowing when adding routes or component tests.",
+      "author": "agent",
+      "agent": "claude-code",
+      "createdAt": 1784105221637,
+      "updatedAt": 1784105282948
+    },
+    {
+      "id": "p_19f64f53e08_0",
+      "artifactType": "comment",
+      "state": "converted_to_task",
+      "file": "apps/web/src/i18n.tsx",
+      "startLine": 16,
+      "endLine": 16,
+      "type": "note",
+      "body": "detectLocale reads only navigator.language (the primary). navigator.languages is the ordered preference list — a user whose primary is an unsupported language but who lists Italian next would still get English here. Minor; scan navigator.languages if you want to honour the full order.",
+      "author": "agent",
+      "agent": "claude-code",
+      "commentId": "c_19f64f8f170_12",
+      "createdAt": 1784105221640,
+      "updatedAt": 1784105464176
+    },
+    {
+      "id": "p_19f64fad76a_0",
+      "artifactType": "comment",
+      "state": "converted_to_task",
+      "file": "apps/web/src/components/organisms/UsChoropleth.tsx",
+      "startLine": 57,
+      "endLine": 69,
+      "type": "note",
+      "body": "GSAP owns the states opacity here, but React also declares it: the base paths render with style opacity 0 (line 118) while this effect animates them to 1 on the DOM. It works today only because React skips rewriting a style value it considers unchanged (0 -> 0), so GSAPs 1 survives later re-renders (data load, theme toggle, hover). That is fragile: any change that makes React re-assert opacity would flash the whole map back to invisible. Cleaner to let GSAP fully own it — set the initial 0 via gsap.set in this effect (or animate a wrapping <g>) and drop opacity from the paths React style.",
+      "author": "agent",
+      "agent": "claude-code",
+      "commentId": "c_19f64fbe546_14",
+      "createdAt": 1784105588586,
+      "updatedAt": 1784105657670
+    },
+    {
+      "id": "p_19f64fad76e_0",
+      "artifactType": "comment",
+      "state": "converted_to_task",
+      "file": "apps/web/src/components/organisms/UsChoropleth.tsx",
+      "startLine": 90,
+      "endLine": 90,
+      "type": "note",
+      "body": "topState = states[0] treats the first entry as the densest, which holds only because the endpoint sorts by count DESC. The frontend does not sort, so if that ORDER BY were ever dropped the default readout would label an arbitrary state as the densest. Either treat the ordering as part of the API contract (and say so) or derive the max client-side so the component is self-contained.",
+      "author": "agent",
+      "agent": "claude-code",
+      "commentId": "c_19f64fdb093_15",
+      "createdAt": 1784105588590,
+      "updatedAt": 1784105775252
+    },
+    {
+      "id": "p_19f64fad771_0",
+      "artifactType": "comment",
+      "state": "converted_to_task",
+      "file": "apps/web/src/components/organisms/UsChoropleth.tsx",
+      "startLine": 119,
+      "endLine": 119,
+      "type": "note",
+      "body": "Every state path is tabIndex=0, so keyboard users tab through ~50 stops before anything after the map. Focus updating the readout is good, but there is no non-visual equivalent. Consider a roving tabindex (one stop for the map, arrow keys between states) and/or a visually-hidden data table as the accessible counterpart to the choropleth.",
+      "author": "agent",
+      "agent": "claude-code",
+      "commentId": "c_19f64fdb2a9_16",
+      "createdAt": 1784105588593,
+      "updatedAt": 1784105775786
+    }
+  ],
+  "createdAt": 1784104468500,
+  "updatedAt": 1784105795817
+}
