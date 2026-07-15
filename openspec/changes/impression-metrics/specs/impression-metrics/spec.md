@@ -25,32 +25,34 @@ let the user switch between the two.
 - **WHEN** the user toggles between local and UTC on the hour chart
 - **THEN** the chart updates to the chosen series without refetching
 
-### Requirement: Top devices by impressions
+### Requirement: Distribution of impressions per device
 
-The API SHALL expose the top-N devices by impression count plus the total number
-of distinct devices, so the heaviest devices can be charted without sending all
-of them.
+The API SHALL expose the distribution of impressions per device — how many
+devices fall in each fixed impressions-per-device band — plus the mean, median,
+and heaviest per-device count and the total number of devices, so the shape of
+how impressions spread across devices can be charted without listing every device.
 
-#### Scenario: Top-N and total
+#### Scenario: Distribution and summary stats
 
 - **WHEN** a client requests `GET /api/impressions/by-device`
-- **THEN** the response contains at most N device entries, each with a device id
-  and count, ordered by count descending
-- **AND** it includes the total count of distinct devices
+- **THEN** the response contains device counts bucketed into fixed impression
+  ranges, plus the mean and median impressions per device, the heaviest device's
+  count, and the total number of distinct devices
+- **AND** the bucketed device counts sum to the total number of devices
 
 ### Requirement: Black Friday rate through the years
 
 The API SHALL expose, for each year in the data, the Black Friday day, its
-impression count, the year's average daily impressions, and the lift (Black
-Friday count ÷ daily mean).
+impression count, the mean daily impressions over the **rest** of that year
+(Black Friday excluded), and the lift (Black Friday count ÷ that mean).
 
 #### Scenario: Correct Black Friday day and lift
 
 - **WHEN** a client requests `GET /api/impressions/black-friday`
 - **THEN** each year's `date` is the Friday after the 4th Thursday of November of
   that year
-- **AND** `lift` equals the year's Black Friday count divided by that year's mean
-  daily impressions
+- **AND** `lift` equals the year's Black Friday count divided by the mean daily
+  impressions of the year's other days
 
 ### Requirement: Metric charts in a dashboard
 
