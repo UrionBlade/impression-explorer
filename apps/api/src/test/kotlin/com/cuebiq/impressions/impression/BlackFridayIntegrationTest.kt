@@ -21,7 +21,7 @@ class BlackFridayIntegrationTest : IntegrationTestBase() {
     @Test
     fun `lift is the black friday count over the year's daily mean`() {
         // 2024 Black Friday is 2024-11-29 (New York). 4 impressions that day, 2 on
-        // another day → observed days 2, total 6, daily mean 3, lift = 4 / 3.
+        // one other day → rest-of-year mean = 2 / 1 day = 2.0, lift = 4 / 2 = 2.0.
         repeat(4) { insertAt("2024-11-29 12:00:00+00") }
         repeat(2) { insertAt("2024-06-15 12:00:00+00") }
 
@@ -29,7 +29,7 @@ class BlackFridayIntegrationTest : IntegrationTestBase() {
 
         assertEquals("2024-11-29", year.date)
         assertEquals(4, year.count)
-        assertEquals(3.0, year.dailyMean)
-        assertEquals(4.0 / 3.0, year.lift, 1e-9)
+        assertEquals(2.0, year.restOfYearDailyMean)
+        assertEquals(2.0, year.lift, 1e-9)
     }
 }

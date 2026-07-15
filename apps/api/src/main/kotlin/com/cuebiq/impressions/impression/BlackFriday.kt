@@ -15,13 +15,14 @@ object BlackFriday {
 }
 
 /**
- * Black Friday for one year: its date, the impression count that day, the year's
- * mean daily impressions, and the lift (count ÷ daily mean).
+ * Black Friday for one year: its date, the impression count that day, the mean
+ * daily impressions over the *rest* of the year (Black Friday excluded, so the
+ * spike doesn't inflate its own baseline), and the lift (count ÷ that mean).
  */
 data class BlackFridayYear(
     val year: Int,
     val date: String,
     val count: Long,
-    val dailyMean: Double,
+    val restOfYearDailyMean: Double,
     val lift: Double,
 )

@@ -19,16 +19,22 @@ class ImpressionByDeviceTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `top devices ordered by count, honouring the limit and the distinct total`() {
-        repeat(3) { insert(100) }
-        insert(200)
-        repeat(2) { insert(300) }
+    fun `distribution buckets devices by their impression count, with median and max`() {
+        repeat(5) { insert(100) } //   device 100 → 5 impressions  (1–10)
+        repeat(15) { insert(200) } //  device 200 → 15 impressions (11–20)
+        repeat(105) { insert(300) } // device 300 → 105 impressions (100+)
 
-        val result = repository.topDevices(limit = 2)
+        val result = repository.deviceDistribution()
 
-        assertEquals(3, result.totalDevices) // 3 distinct devices
-        assertEquals(2, result.top.size) // limit honoured
-        assertEquals(DeviceCount(100, 3), result.top[0]) // densest first
-        assertEquals(DeviceCount(300, 2), result.top[1])
+        assertEquals(3, result.totalDevices)
+        assertEquals(125.0 / 3.0, result.meanPerDevice, 1e-9) // mean of [5, 15, 105]
+        assertEquals(15.0, result.medianPerDevice) // median of [5, 15, 105]
+        assertEquals(105, result.maxPerDevice)
+
+        val byLabel = result.buckets.associate { it.label to it.devices }
+        assertEquals(1, byLabel["1–10"]) // device 100
+        assertEquals(1, byLabel["11–20"]) // device 200
+        assertEquals(1, byLabel["100+"]) // device 300
+        assertEquals(0, byLabel["21–30"])
     }
 }

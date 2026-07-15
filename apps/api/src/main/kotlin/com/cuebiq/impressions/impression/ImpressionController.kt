@@ -16,9 +16,9 @@ class ImpressionController(private val repository: ImpressionRepository) {
     @GetMapping("/by-hour")
     fun byHour(): ByHourResponse = repository.countsByHour()
 
-    /** Top devices by impression count (plus the total device count). */
+    /** Distribution of impressions per device (plus median, heaviest, and total). */
     @GetMapping("/by-device")
-    fun byDevice(): ByDeviceResponse = repository.topDevices()
+    fun byDevice(): ByDeviceResponse = repository.deviceDistribution()
 
     /** Black Friday impression rate (lift) per year. */
     @GetMapping("/black-friday")
