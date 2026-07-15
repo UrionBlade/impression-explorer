@@ -24,6 +24,7 @@ class BlackFridayIntegrationTest : IntegrationTestBase() {
         // one other day → rest-of-year mean = 2 / 1 day = 2.0, lift = 4 / 2 = 2.0.
         repeat(4) { insertAt("2024-11-29 12:00:00+00") }
         repeat(2) { insertAt("2024-06-15 12:00:00+00") }
+        refreshRollups()
 
         val year = repository.blackFriday().single { it.year == 2024 }
 

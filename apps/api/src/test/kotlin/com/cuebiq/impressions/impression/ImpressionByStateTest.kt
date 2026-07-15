@@ -33,6 +33,7 @@ class ImpressionByStateTest : IntegrationTestBase() {
         repeat(3) { insertImpression(florida) }
         insertImpression(texas)
         repeat(2) { insertImpression(null) }
+        refreshRollups()
 
         val result = repository.countsByState()
 

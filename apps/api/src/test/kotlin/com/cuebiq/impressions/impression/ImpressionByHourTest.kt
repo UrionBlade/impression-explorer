@@ -31,6 +31,7 @@ class ImpressionByHourTest : IntegrationTestBase() {
         val florida = insertState("Florida") // has a state_timezone row from V3
         repeat(3) { insertImpression(florida) }
         repeat(2) { insertImpression(null) }
+        refreshRollups()
 
         val result = repository.countsByHour()
 

@@ -23,6 +23,7 @@ class ImpressionByDeviceTest : IntegrationTestBase() {
         repeat(5) { insert(100) } //   device 100 → 5 impressions  (1–10)
         repeat(15) { insert(200) } //  device 200 → 15 impressions (11–20)
         repeat(105) { insert(300) } // device 300 → 105 impressions (100+)
+        refreshRollups()
 
         val result = repository.deviceDistribution()
 

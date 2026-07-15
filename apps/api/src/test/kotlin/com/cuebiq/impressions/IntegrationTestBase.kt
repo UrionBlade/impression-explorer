@@ -1,9 +1,12 @@
 package com.cuebiq.impressions
 
+import com.cuebiq.impressions.impression.Rollups
+import org.junit.jupiter.api.BeforeEach
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.jdbc.core.simple.JdbcClient
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
-import org.springframework.transaction.annotation.Transactional
 import org.testcontainers.containers.PostgreSQLContainer
 
 /**
@@ -13,10 +16,28 @@ import org.testcontainers.containers.PostgreSQLContainer
  * The container is a singleton started once for the whole test JVM (not managed
  * by @Testcontainers, which would stop it after the first test class and leave
  * later classes unable to connect). Ryuk reaps it on JVM exit.
+ *
+ * These tests exercise the rollup path, and materialized views read *committed*
+ * data — so the old rollback-per-test isolation no longer fits. Instead each test
+ * starts from a truncated, freshly-refreshed (empty) baseline, inserts committed
+ * rows, calls [refreshRollups], then asserts. That also makes the tests verify the
+ * real production path: the view definitions and the refresh.
  */
 @SpringBootTest
-@Transactional // each test rolls back, so the shared container stays clean between tests
 abstract class IntegrationTestBase {
+    @Autowired
+    protected lateinit var jdbcClient: JdbcClient
+
+    /** Reset to an empty, refreshed baseline before every test. */
+    @BeforeEach
+    fun resetToEmpty() {
+        jdbcClient.sql("TRUNCATE impressions, states RESTART IDENTITY CASCADE").update()
+        Rollups.refresh(jdbcClient)
+    }
+
+    /** Recompute the rollups so just-inserted rows become visible to the reads. */
+    protected fun refreshRollups() = Rollups.refresh(jdbcClient)
+
     companion object {
         @JvmStatic
         val postgres: PostgreSQLContainer<*> = PostgreSQLContainer("postgres:16").apply { start() }
