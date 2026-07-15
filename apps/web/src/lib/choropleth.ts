@@ -1,13 +1,7 @@
-import type { Theme } from "../theme";
-
-// Sequential ramps chosen so lightness is monotonic against each theme's canvas:
-// on dark, density brightens (blue → teal); on light, density darkens (pale → navy).
-const RAMPS: Record<Theme, string[]> = {
-  dark: ["#2a3a5c", "#2f5788", "#3d78b0", "#3fa0b8", "#3fc7c9", "#7fe0e1"],
-  light: ["#dceef0", "#a9d8dc", "#6bb9c4", "#3d8fb0", "#356fa0", "#233a63"],
-};
-
-const NO_DATA: Record<Theme, string> = { dark: "#191f36", light: "#e9edf4" };
+// A single sequential ramp, the same in light and dark so the scale never flips:
+// pale → saturated → navy for low → high density.
+const RAMP = ["#dceef0", "#a9d8dc", "#6bb9c4", "#3d8fb0", "#356fa0", "#233a63"];
+const NO_DATA = "#cbd2dc";
 
 export interface ColorScale {
   colorFor: (count: number) => string;
@@ -30,12 +24,11 @@ function quantile(sorted: number[], q: number): number {
  * many small), so equal-count quantile bins spread colour meaningfully rather
  * than dumping everything into the lowest linear bin.
  */
-export function makeScale(counts: number[], theme: Theme): ColorScale {
-  const ramp = RAMPS[theme];
+export function makeScale(counts: number[]): ColorScale {
+  const ramp = RAMP;
   const n = ramp.length;
   const positive = counts.filter((c) => c > 0).sort((a, b) => a - b);
 
-  // Thresholds at the (1/n … (n-1)/n) quantiles → n bins.
   const thresholds: number[] = [];
   for (let i = 1; i < n; i++) thresholds.push(Math.round(quantile(positive, i / n)));
 
@@ -53,7 +46,7 @@ export function makeScale(counts: number[], theme: Theme): ColorScale {
   const fallback = ramp[ramp.length - 1] ?? "#000000";
   return {
     colorFor: (count) => ramp[binIndex(count)] ?? fallback,
-    noData: NO_DATA[theme],
+    noData: NO_DATA,
     bins,
   };
 }

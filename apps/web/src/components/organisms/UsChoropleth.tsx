@@ -6,7 +6,6 @@ import type { FeatureCollection } from "geojson";
 import { useImpressionsByState } from "../../api/impressions";
 import { useUsMap } from "../../api/usMap";
 import { makeScale } from "../../lib/choropleth";
-import { useTheme } from "../../theme";
 import { useI18n } from "../../i18n";
 import { useReducedMotion } from "../../motion";
 import { formatNumber } from "../../format";
@@ -38,7 +37,6 @@ function project(map: FeatureCollection | undefined): Shape[] {
 }
 
 export function UsChoropleth() {
-  const { theme } = useTheme();
   const { t, locale } = useI18n();
   const reduced = useReducedMotion();
   const map = useUsMap();
@@ -50,7 +48,7 @@ export function UsChoropleth() {
     () => new Map((data.data?.states ?? []).map((s) => [s.state, s.count])),
     [data.data],
   );
-  const scale = useMemo(() => makeScale([...counts.values()], theme), [counts, theme]);
+  const scale = useMemo(() => makeScale([...counts.values()]), [counts]);
   // Densest state derived client-side, so the default readout doesn't depend on
   // the endpoint's result ordering.
   const topState = useMemo(() => {
