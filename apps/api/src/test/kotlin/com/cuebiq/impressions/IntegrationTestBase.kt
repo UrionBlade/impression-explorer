@@ -3,6 +3,7 @@ package com.cuebiq.impressions
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
+import org.springframework.transaction.annotation.Transactional
 import org.testcontainers.containers.PostgreSQLContainer
 
 /**
@@ -14,6 +15,7 @@ import org.testcontainers.containers.PostgreSQLContainer
  * later classes unable to connect). Ryuk reaps it on JVM exit.
  */
 @SpringBootTest
+@Transactional // each test rolls back, so the shared container stays clean between tests
 abstract class IntegrationTestBase {
     companion object {
         @JvmStatic

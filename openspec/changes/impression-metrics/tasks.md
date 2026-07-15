@@ -1,22 +1,22 @@
 ## 1. Backend — hour of day (local + UTC)
 
-- [ ] 1.1 Migration `V3__state_timezone.sql`: `state_timezone(state, timezone)` reference table + INSERT the 51 state → IANA zone rows (straddling states → predominant zone)
-- [ ] 1.2 Repository: UTC query (`extract(hour FROM ts)`, all rows) + local query (`extract(hour FROM i.ts AT TIME ZONE tz.timezone)`, joined through `state_timezone`), each 0-filled to 24 buckets
-- [ ] 1.3 `GET /api/impressions/by-hour` → `{ local: [{ hour, count }], utc: [{ hour, count }] }`
-- [ ] 1.4 Testcontainers test: both series 24 buckets; `utc` sums to total, `local` sums to the attributed total
+- [x] 1.1 Migration `V3__state_timezone.sql`: `state_timezone(state, timezone)` reference table + INSERT the 51 state → IANA zone rows (straddling states → predominant zone)
+- [x] 1.2 Repository: UTC query (`extract(hour FROM ts)`, all rows) + local query (`extract(hour FROM i.ts AT TIME ZONE tz.timezone)`, joined through `state_timezone`), each 0-filled to 24 buckets
+- [x] 1.3 `GET /api/impressions/by-hour` → `{ local: [{ hour, count }], utc: [{ hour, count }] }`
+- [x] 1.4 Testcontainers test: both series 24 buckets; `utc` sums to total, `local` sums to the attributed total
 
 ## 2. Backend — top devices
 
-- [ ] 2.1 Repository query: top-N by `GROUP BY device_id ORDER BY count DESC LIMIT N`, plus `COUNT(DISTINCT device_id)`
-- [ ] 2.2 `GET /api/impressions/by-device` → `{ totalDevices, top: [{ deviceId, count }] }`
-- [ ] 2.3 Test: ordering (densest first), N honoured, totalDevices correct
+- [x] 2.1 Repository query: top-N by `GROUP BY device_id ORDER BY count DESC LIMIT N`, plus `COUNT(DISTINCT device_id)`
+- [x] 2.2 `GET /api/impressions/by-device` → `{ totalDevices, top: [{ deviceId, count }] }`
+- [x] 2.3 Test: ordering (densest first), N honoured, totalDevices correct
 
 ## 3. Backend — Black Friday
 
-- [ ] 3.1 Date helper: Black Friday (Friday after the 4th Thursday of November) per year, unit-tested against known dates
-- [ ] 3.2 Repository: per year, BF-day count via `(ts AT TIME ZONE 'America/New_York')::date`, year total, observed-day count → daily mean + lift
-- [ ] 3.3 `GET /api/impressions/black-friday` → `[{ year, date, count, dailyMean, lift }]`
-- [ ] 3.4 Test: BF dates correct, lift == count / dailyMean
+- [x] 3.1 Date helper: Black Friday (Friday after the 4th Thursday of November) per year, unit-tested against known dates
+- [x] 3.2 Repository: per year, BF-day count via `(ts AT TIME ZONE 'America/New_York')::date`, year total, observed-day count → daily mean + lift
+- [x] 3.3 `GET /api/impressions/black-friday` → `[{ year, date, count, dailyMean, lift }]`
+- [x] 3.4 Test: BF dates correct, lift == count / dailyMean
 
 ## 4. Frontend — data + chart primitives
 
