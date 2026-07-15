@@ -21,8 +21,8 @@ export function MapLegend({ scale, loading }: { scale: ColorScale; loading?: boo
         </div>
         {!loading && (
           <span className="text-xs tabular-nums text-muted">
-            {formatNumber(scale.bins[0].min, locale)} –{" "}
-            {formatNumber(scale.bins[scale.bins.length - 1].max, locale)}
+            {formatNumber(scale.bins[0]?.min ?? 0, locale)} –{" "}
+            {formatNumber(scale.bins[scale.bins.length - 1]?.max ?? 0, locale)}
           </span>
         )}
       </div>

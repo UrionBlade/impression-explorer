@@ -20,9 +20,9 @@ function quantile(sorted: number[], q: number): number {
   if (sorted.length === 0) return 0;
   const pos = (sorted.length - 1) * q;
   const base = Math.floor(pos);
-  const rest = pos - base;
-  const next = sorted[base + 1] ?? sorted[base];
-  return sorted[base] + rest * (next - sorted[base]);
+  const lo = sorted[base] ?? 0;
+  const next = sorted[base + 1] ?? lo;
+  return lo + (pos - base) * (next - lo);
 }
 
 /**
@@ -41,17 +41,18 @@ export function makeScale(counts: number[], theme: Theme): ColorScale {
 
   const binIndex = (count: number): number => {
     let i = 0;
-    while (i < thresholds.length && count >= thresholds[i]) i++;
+    while (i < thresholds.length && count >= (thresholds[i] ?? Number.POSITIVE_INFINITY)) i++;
     return i;
   };
 
   const min = positive[0] ?? 0;
   const max = positive[positive.length - 1] ?? 0;
   const edges = [min, ...thresholds, max];
-  const bins = ramp.map((color, i) => ({ color, min: edges[i], max: edges[i + 1] }));
+  const bins = ramp.map((color, i) => ({ color, min: edges[i] ?? 0, max: edges[i + 1] ?? 0 }));
 
+  const fallback = ramp[ramp.length - 1] ?? "#000000";
   return {
-    colorFor: (count) => ramp[binIndex(count)],
+    colorFor: (count) => ramp[binIndex(count)] ?? fallback,
     noData: NO_DATA[theme],
     bins,
   };
