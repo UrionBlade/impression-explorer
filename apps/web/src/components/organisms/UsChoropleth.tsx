@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { geoAlbersUsa, geoPath } from "d3-geo";
+import { motion } from "framer-motion";
 import gsap from "gsap";
 import type { FeatureCollection } from "geojson";
 import { useImpressionsByState } from "../../api/impressions";
@@ -17,16 +18,23 @@ const H = 610;
 interface Shape {
   name: string;
   d: string;
+  cx: number;
+  cy: number;
 }
 
 function project(map: FeatureCollection | undefined): Shape[] {
   if (!map) return [];
   const projection = geoAlbersUsa().fitSize([W, H], map);
   const path = geoPath(projection);
-  return map.features.map((f) => ({
-    name: String((f.properties as Record<string, unknown>)?.level1 ?? ""),
-    d: path(f) ?? "",
-  }));
+  return map.features.map((f) => {
+    const [cx, cy] = path.centroid(f);
+    return {
+      name: String((f.properties as Record<string, unknown>)?.level1 ?? ""),
+      d: path(f) ?? "",
+      cx,
+      cy,
+    };
+  });
 }
 
 export function UsChoropleth() {
@@ -43,17 +51,33 @@ export function UsChoropleth() {
     [data.data],
   );
   const scale = useMemo(() => makeScale([...counts.values()], theme), [counts, theme]);
+  // Densest state derived client-side, so the default readout doesn't depend on
+  // the endpoint's result ordering.
+  const topState = useMemo(() => {
+    let name: string | null = null;
+    let max = -1;
+    for (const [state, count] of counts) {
+      if (count > max) {
+        max = count;
+        name = state;
+      }
+    }
+    return name;
+  }, [counts]);
   const [active, setActive] = useState<string | null>(null);
 
-  // Reduced-motion aware entrance: stagger the states in.
-  useEffect(() => {
+  // Reduced-motion aware entrance. GSAP owns the paths' opacity end to end (the
+  // paths carry no opacity in their React style), and useLayoutEffect sets the
+  // start value before paint so there's no flash and nothing for React to fight.
+  useLayoutEffect(() => {
     const svg = svgRef.current;
     if (!svg || shapes.length === 0) return;
-    const paths = svg.querySelectorAll("path");
+    const paths = svg.querySelectorAll<SVGPathElement>("path[data-state]");
     if (reduced) {
       gsap.set(paths, { opacity: 1 });
       return;
     }
+    gsap.set(paths, { opacity: 0 });
     const tween = gsap.to(paths, { opacity: 1, duration: 0.5, ease: "power1.out", stagger: 0.006 });
     return () => {
       tween.kill();
@@ -79,58 +103,96 @@ export function UsChoropleth() {
   }
 
   const total = data.data?.total ?? 0;
-  const activeCount = active ? (counts.get(active) ?? 0) : null;
+  // Default the readout to the densest state; hover overrides it.
+  const shown = active ?? topState;
+  const shownCount = shown ? (counts.get(shown) ?? 0) : null;
+  const fillFor = (name: string) => {
+    const c = counts.get(name);
+    return data.isPending || c == null ? scale.noData : scale.colorFor(c);
+  };
+  const activeShape = active ? shapes.find((s) => s.name === active) : undefined;
 
   return (
     <figure className="m-0">
       <div className="relative">
-        <svg
-          ref={svgRef}
-          viewBox={`0 0 ${W} ${H}`}
-          className="h-auto w-full"
-          role="group"
-          aria-label={t("section.map.title")}
-        >
-          {shapes.map((s) => {
-            const c = counts.get(s.name);
-            const fill = data.isPending ? scale.noData : c == null ? scale.noData : scale.colorFor(c);
-            return (
-              <path
-                key={s.name}
-                d={s.d}
-                fill={fill}
-                stroke="var(--canvas)"
-                strokeWidth={active === s.name ? 1.5 : 0.5}
-                style={{ opacity: reduced ? 1 : 0, cursor: "pointer", outline: "none" }}
-                tabIndex={0}
-                role="img"
-                aria-label={`${s.name}: ${formatNumber(c ?? 0, locale)}`}
-                onMouseEnter={() => setActive(s.name)}
-                onMouseLeave={() => setActive((a) => (a === s.name ? null : a))}
-                onFocus={() => setActive(s.name)}
-                onBlur={() => setActive((a) => (a === s.name ? null : a))}
-              />
-            );
-          })}
+        {/* Visual/pointer affordance; the sr-only table below is its accessible twin. */}
+        <svg ref={svgRef} viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" aria-hidden="true">
+          {shapes.map((s) => (
+            <path
+              key={s.name}
+              data-state
+              d={s.d}
+              fill={fillFor(s.name)}
+              stroke="var(--canvas)"
+              strokeWidth={0.5}
+              style={{ cursor: "pointer" }}
+              onMouseEnter={() => setActive(s.name)}
+              onMouseLeave={() => setActive((a) => (a === s.name ? null : a))}
+            />
+          ))}
+
+          {/* Hovered/focused state, lifted and zoomed above the rest. */}
+          {activeShape && (
+            <motion.path
+              key={activeShape.name}
+              d={activeShape.d}
+              fill={fillFor(activeShape.name)}
+              stroke="var(--ink)"
+              strokeWidth={1}
+              className="pointer-events-none"
+              style={{
+                transformBox: "fill-box",
+                transformOrigin: "center",
+                filter: "drop-shadow(0 6px 14px rgba(10,15,30,0.45))",
+              }}
+              initial={reduced ? false : { scale: 1, opacity: 0.7 }}
+              animate={{ scale: 1.08, opacity: 1 }}
+              transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+            />
+          )}
         </svg>
 
-        {/* Accessible detail readout — updates on hover and keyboard focus. */}
+        {/* Detail readout — the densest state by default, updated on hover/focus. */}
         <div className="pointer-events-none absolute right-2 top-2 min-w-40 rounded-xl border border-line bg-surface/90 px-4 py-3 backdrop-blur">
-          {active ? (
+          {shown ? (
             <>
-              <div className="text-sm font-semibold text-ink">{active}</div>
+              {!active && (
+                <div className="text-[10px] uppercase tracking-wider text-muted">
+                  {t("map.densest")}
+                </div>
+              )}
+              <div className="text-sm font-semibold text-ink">{shown}</div>
               <div className="mt-0.5 font-serif text-2xl tabular-nums text-accent">
-                {formatNumber(activeCount ?? 0, locale)}
+                {formatNumber(shownCount ?? 0, locale)}
               </div>
               <div className="text-xs text-muted">
-                {total > 0 ? `${(((activeCount ?? 0) / total) * 100).toFixed(1)}%` : "—"}
+                {total > 0 ? `${(((shownCount ?? 0) / total) * 100).toFixed(1)}%` : "—"}
               </div>
             </>
           ) : (
-            <div className="text-xs text-muted">{t("map.hint")}</div>
+            <div className="text-xs text-muted">{t("map.loading")}</div>
           )}
         </div>
       </div>
+
+      {/* Accessible equivalent of the choropleth for screen readers. */}
+      <table className="sr-only">
+        <caption>{t("section.map.title")}</caption>
+        <thead>
+          <tr>
+            <th>{t("map.colState")}</th>
+            <th>{t("map.colImpressions")}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {(data.data?.states ?? []).map((s) => (
+            <tr key={s.state}>
+              <td>{s.state}</td>
+              <td>{formatNumber(s.count, locale)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
 
       <figcaption className="mt-4 flex flex-wrap items-end justify-between gap-4">
         <MapLegend scale={scale} loading={data.isPending} />
