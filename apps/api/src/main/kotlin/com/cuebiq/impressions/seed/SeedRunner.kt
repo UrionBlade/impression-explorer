@@ -5,6 +5,7 @@ import org.postgresql.copy.PGCopyOutputStream
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.CommandLineRunner
+import com.cuebiq.impressions.impression.Rollups
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import tools.jackson.databind.JsonNode
@@ -46,6 +47,8 @@ class SeedRunner(
                 val resolver = insertStates(conn, states)
                 val (total, unattributed) = copyImpressions(conn, resolver)
                 conn.commit()
+                refreshRollups(conn)
+                conn.commit()
                 val pct = if (total == 0L) 0.0 else unattributed * 100.0 / total
                 log.info(
                     "Seed complete: {} states, {} impressions ({} unattributed to a state, {}%)",
@@ -56,6 +59,14 @@ class SeedRunner(
                 throw e
             }
         }
+    }
+
+    /** Recompute the pre-aggregated rollups from the freshly loaded data. */
+    private fun refreshRollups(conn: Connection) {
+        conn.createStatement().use { st ->
+            for (view in Rollups.VIEWS) st.execute("REFRESH MATERIALIZED VIEW $view")
+        }
+        log.info("Refreshed {} rollup views", Rollups.VIEWS.size)
     }
 
     /** Insert every state name and return a resolver keyed by the generated ids. */

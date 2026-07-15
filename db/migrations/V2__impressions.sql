@@ -17,9 +17,9 @@ CREATE TABLE impressions (
 
 -- Supports single-state drill-down (WHERE state_id = ?) and keeps parent-side
 -- deletes cheap. It does NOT accelerate the all-states choropleth: an unfiltered
--- GROUP BY state_id scans the whole table regardless. At scale the lever there
--- is a pre-aggregated rollup (per-state/-hour/-year), refreshed once after the
--- static seed, not this index.
+-- GROUP BY state_id scans the whole table regardless. At scale that lever is the
+-- pre-aggregated rollup in V4__rollups.sql (refreshed once after the seed), which
+-- every analytical query reads instead of this table — not this index.
 CREATE INDEX idx_impressions_state_id ON impressions (state_id);
 
 -- Backs date-range access: Black Friday windows and any date filtering
