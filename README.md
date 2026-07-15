@@ -5,7 +5,9 @@ from a mobile device) concentrate across the United States — by state, by devi
 by hour of day, and through the years.
 
 Built for the Cuebiq Senior Full Stack Engineer challenge. See
-[`CHALLENGE.md`](./CHALLENGE.md) for the brief.
+[`CHALLENGE.md`](./CHALLENGE.md) for the brief and
+[`DECISIONS.md`](./DECISIONS.md) for the product-level choices and open questions
+(what an "impression" is, local vs UTC hour, the Black Friday baseline, …).
 
 ## Stack
 
