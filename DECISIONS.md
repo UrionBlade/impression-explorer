@@ -1,10 +1,10 @@
 # Product decisions
 
-The brief is intentionally open in places. This file records the product-level
-calls I made, why I made them, and the questions I'd put back to you. Engineering
-rationale (no PostGIS, ingest-time geo-join, spec-driven flow) lives in the
-[`openspec/`](./openspec) change history; this file is about *what the numbers
-mean*, not how they're computed.
+The brief is intentionally open in places. Where it was, I picked an approach,
+treated it as settled, and explain the reasoning here — these are decisions, not
+questions. Engineering rationale (no PostGIS, ingest-time geo-join, spec-driven
+flow) lives in the [`openspec/`](./openspec) change history; this file is about
+*what the numbers mean*, not how they're computed.
 
 ## What is an "impression"?
 
@@ -30,7 +30,11 @@ Everything the app shows is a different cut of this one event: **where** (state)
 **how concentrated per device**, **at what hour**, and **how it changes across
 years** (Black Friday).
 
-> This is the first thing I'd confirm with you — see Open questions.
+We treat **each CSV row as one distinct impression** — no de-duplication — and
+`device_id` as a **stable pseudonymous advertising ID** for the window of the
+dataset. Two impressions from the same device in the same second are two
+impressions: at this granularity they're genuine repeated deliveries, and
+collapsing them would need a rule the data doesn't justify.
 
 ## Hour of day: local time vs UTC (we show both)
 
@@ -56,6 +60,14 @@ a fact about their local clock, not UTC. Aggregate the same impressions in UTC
 and that peak gets **smeared across the timezones** — a 1pm-local peak in New York
 and in California land on different UTC hours and flatten each other out. So the
 local series is the actionable one for scheduling; UTC is the operational one.
+
+**Split-state timezones.** A few states span two zones (e.g. Florida ET/CT). We
+bucket every impression by its state's **predominant** zone, not by a per-
+coordinate timezone lookup. We attribute location at state granularity, so the
+timezone follows the same granularity: the predominant zone is correct for the
+large majority of a split state's impressions, and per-point resolution would add
+a geographic lookup for a difference that only shifts a small border minority by
+one hour.
 
 Honest caveat surfaced in the UI: the local view only covers impressions we could
 attribute to a state (≈197k of 200k); the rest have no timezone and are excluded
@@ -108,27 +120,15 @@ impressions, a few send thousands (max observed ≈13,351 against a mean of ≈2
 - Buckets are **even and comparable** (`1–10, 11–20, …, 91–100, 100+`) so bar
   lengths mean the same thing across the axis. The `100+` bucket absorbs the tail.
 
+We **keep the extreme devices** (the ≈13k-impression one, ~500× the median)
+rather than filtering them. Whether that's a heavy user or ad-tech test traffic,
+the median already stops it from distorting the "typical device", and dropping
+raw data would need a policy the brief doesn't set. It stays in the totals and in
+the `100+` bucket, visible, not silently removed.
+
 ## Cross-cutting UI rules
 
 - **Every chart has an accessible table** (`sr-only`) mirroring the data, and
   respects `prefers-reduced-motion` (charts render fully drawn, no animation).
 - **Chart animations trigger on scroll into view**, not on load, so the
   storytelling reads in order as you scroll.
-
-## Open questions (I'd rather ask than assume)
-
-1. **Definition of impression.** Is "one ad served to one device" the right
-   model? Specifically: is `device_id` a stable advertising ID, and should any
-   dedup happen (same device, same second)?
-2. **Outlier devices.** A device with ~13k impressions is 500× the median — real
-   heavy user, ad-tech test traffic, or a bot? Right now we keep them and let the
-   median absorb the distortion, but we could flag/exclude them if you have a
-   policy.
-3. **Split-state timezones.** A few states span two zones (e.g. Florida ET/CT).
-   We pick the **predominant** zone per state for the local-hour bucketing. Good
-   enough, or do you want per-coordinate timezone resolution?
-4. **Unattributed impressions.** ~2.7k points fall outside every state polygon.
-   Keep-and-label (current) or a different treatment?
-5. **Black Friday baseline.** Is "mean of the rest of the year" the comparison
-   you want, or would you rather see it against, say, the November median or the
-   same weekday across the month?
