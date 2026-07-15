@@ -1,5 +1,6 @@
 import { LogoMark } from "../atoms/LogoMark";
 import { ThemeToggle } from "../molecules/ThemeToggle";
+import { LanguageSwitcher } from "../molecules/LanguageSwitcher";
 import { useI18n } from "../../i18n";
 
 export function Header() {
@@ -11,7 +12,10 @@ export function Header() {
           <LogoMark className="size-7" />
           <span className="font-serif text-lg font-semibold text-ink">{t("app.title")}</span>
         </div>
-        <ThemeToggle />
+        <div className="flex items-center gap-3">
+          <LanguageSwitcher />
+          <ThemeToggle />
+        </div>
       </div>
     </header>
   );

@@ -3,19 +3,24 @@
 ## Purpose
 TBD - created by archiving change bootstrap-platform. Update Purpose after archive.
 ## Requirements
-### Requirement: Bilingual UI with browser-based language
+### Requirement: Route-based bilingual UI
 
-The frontend SHALL render all user-facing text in Italian or English, choosing the language from the browser's preferred language, and falling back to English for any language it does not support. There is no manual language switcher.
+The language SHALL be carried by the route (`/it`, `/en`). Opening a path without a supported language SHALL redirect to the language of the browser's preference, falling back to English. A language switcher SHALL let the user change language by navigating between the two routes.
 
-#### Scenario: Italian browser renders Italian
+#### Scenario: Root redirects to the browser language
 
-- **WHEN** a user whose browser prefers Italian opens the app
-- **THEN** the UI renders in Italian
+- **WHEN** a user whose browser prefers Italian opens `/`
+- **THEN** they are redirected to `/it` and the UI renders in Italian
 
-#### Scenario: Unsupported browser language falls back to English
+#### Scenario: Unsupported language route falls back to English
 
-- **WHEN** a user whose browser prefers a language other than Italian or English opens the app
-- **THEN** the UI renders in English
+- **WHEN** a user opens a path whose language segment is neither `it` nor `en` (or none)
+- **THEN** they are redirected to the browser's language, or English if it is unsupported
+
+#### Scenario: Switching language changes the route
+
+- **WHEN** the user selects the other language from the switcher
+- **THEN** the app navigates to that language's route and all visible text updates
 
 ### Requirement: No hard-coded user-facing strings
 

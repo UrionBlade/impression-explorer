@@ -1,10 +1,29 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, type ReactNode } from "react";
+import { useNavigate } from "react-router-dom";
 import en from "./locales/en.json";
 import it from "./locales/it.json";
 
 export type Locale = "en" | "it";
 
 export const LOCALES: Locale[] = ["en", "it"];
+
+export function isLocale(value: string | undefined): value is Locale {
+  return value === "en" || value === "it";
+}
+
+/**
+ * Language follows the browser's preference order: the first supported language
+ * in `navigator.languages` wins; English if none is supported.
+ */
+export function detectLocale(): Locale {
+  const preferences = navigator.languages?.length ? navigator.languages : [navigator.language];
+  for (const pref of preferences) {
+    const lower = (pref || "").toLowerCase();
+    if (lower.startsWith("it")) return "it";
+    if (lower.startsWith("en")) return "en";
+  }
+  return "en";
+}
 
 const catalogs: Record<Locale, Record<string, string>> = { en, it };
 
@@ -17,15 +36,9 @@ type I18nContextValue = {
 
 const I18nContext = createContext<I18nContextValue | null>(null);
 
-/** Language follows the browser: Italian → it, anything else → English. */
-function detectLocale(): Locale {
-  const fromHtml = document.documentElement.getAttribute("lang");
-  if (fromHtml === "it" || fromHtml === "en") return fromHtml;
-  return (navigator.language || "en").toLowerCase().startsWith("it") ? "it" : "en";
-}
-
-export function LocaleProvider({ children }: { children: ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>(detectLocale);
+/** Locale comes from the route (`/it`, `/en`); switching navigates to the other route. */
+export function LocaleProvider({ locale, children }: { locale: Locale; children: ReactNode }) {
+  const navigate = useNavigate();
 
   useEffect(() => {
     document.documentElement.setAttribute("lang", locale);
@@ -34,17 +47,15 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
   const t: I18nContextValue["t"] = (key, vars) => {
     let s = catalogs[locale][key] ?? catalogs.en[key] ?? key;
     if (vars) {
-      for (const [k, v] of Object.entries(vars)) {
-        s = s.replaceAll(`{${k}}`, String(v));
-      }
+      for (const [k, v] of Object.entries(vars)) s = s.replaceAll(`{${k}}`, String(v));
     }
     return s;
   };
 
+  const setLocale = (l: Locale) => navigate(`/${l}`);
+
   return (
-    <I18nContext.Provider value={{ locale, setLocale: setLocaleState, t }}>
-      {children}
-    </I18nContext.Provider>
+    <I18nContext.Provider value={{ locale, setLocale, t }}>{children}</I18nContext.Provider>
   );
 }
 
