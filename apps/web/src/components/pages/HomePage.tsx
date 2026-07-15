@@ -1,14 +1,10 @@
 import { AppShell } from "../templates/AppShell";
-import { Hero } from "../organisms/Hero";
-import { MapSection } from "../organisms/MapSection";
-import { QuestionsSection } from "../organisms/QuestionsSection";
+import { ScrollyStage } from "../organisms/ScrollyStage";
 
 export function HomePage() {
   return (
     <AppShell>
-      <Hero />
-      <MapSection />
-      <QuestionsSection />
+      <ScrollyStage />
     </AppShell>
   );
 }
