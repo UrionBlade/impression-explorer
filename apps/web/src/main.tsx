@@ -6,10 +6,15 @@ import App from "./App.tsx";
 import { ThemeProvider } from "./theme";
 import { LocaleProvider, detectLocale, isLocale } from "./i18n";
 import { MotionProvider } from "./motion";
+import "@fontsource-variable/manrope";
+import "@fontsource-variable/fraunces";
 import "./index.css";
 
+// The dataset is a static batch load — cache queries for the session, no refetch.
 const queryClient = new QueryClient({
-  defaultOptions: { queries: { refetchOnWindowFocus: false } },
+  defaultOptions: {
+    queries: { staleTime: Infinity, gcTime: Infinity, refetchOnWindowFocus: false, retry: 1 },
+  },
 });
 
 /** Single source of the default-language redirect; preserves the query string. */
