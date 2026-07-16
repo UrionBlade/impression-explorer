@@ -103,7 +103,10 @@ November** (the US convention), per year, in `America/New_York`.
 - State is resolved **once at ingest** by point-in-polygon (ray casting) against
   the US map, then stored as an indexed `state_id`. Per-state queries are a plain
   `GROUP BY`.
-- **51 "states"** includes the District of Columbia.
+- **51 states in the reference map** (the 50 states plus the District of
+  Columbia). The dataset actually has impressions in **50** of them — **Oregon**
+  has none, so it renders as no-data on the map. The count shown in the UI comes
+  from the API (states present in the data), not a hard-coded 51.
 - The ≈2.7k impressions that fall **outside every US state polygon** (offshore
   points, island fragments, bad coordinates) are **kept and labelled**, not
   dropped and not snapped to the nearest state. Both alternatives are worse:
@@ -131,6 +134,22 @@ rather than filtering them. Whether that's a heavy user or ad-tech test traffic,
 the median already stops it from distorting the "typical device", and dropping
 raw data would need a policy the brief doesn't set. It stays in the totals and in
 the `100+` bucket, visible, not silently removed.
+
+## Behaviour as the dataset grows (tested at 200M)
+
+Every metric is served from a **pre-aggregated rollup** (a Postgres materialized
+view, refreshed once after the seed), so each endpoint reads a bounded relation
+instead of scanning the impressions table. To check this holds, we replayed the
+real 200k rows ×1000 → **200,000,000 impressions** and measured.
+
+- **Serving latency stayed flat**: ~2–7ms per endpoint at 200M, versus ~2–6ms at
+  200k — across all four. The base table grew to **22 GB** (14 GB heap + 8.3 GB
+  indexes), but the rollups the endpoints actually read stay **kilobytes** (e.g.
+  the per-state view is 16 kB, per-day 144 kB) because their size depends on the
+  number of states / hours / days / device-buckets, not on the row count.
+- **Correctness held**: every figure was exactly 1000× the baseline (Florida
+  42,629,000; 2,747,000 unattributed; median 8,000).
+- **The cost moved to ingest**, a one-time batch job, not the serving path.
 
 ## Cross-cutting UI rules
 
