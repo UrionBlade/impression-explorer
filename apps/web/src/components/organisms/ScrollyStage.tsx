@@ -6,19 +6,23 @@ import { DeviceChart } from "./DeviceChart";
 import { BlackFridayChart } from "./BlackFridayChart";
 import { useI18n } from "../../i18n";
 import { formatNumber } from "../../format";
-
-const IMPRESSIONS = 200000;
-const STATES = 51;
-const DEVICES = 7968;
-const YEARS = 7;
+import { useImpressionsByState } from "../../api/impressions";
+import { useTopDevices, useBlackFriday } from "../../api/metrics";
 
 export function ScrollyStage() {
   const { t, locale } = useI18n();
+  const byState = useImpressionsByState();
+  const byDevice = useTopDevices();
+  const byBlackFriday = useBlackFriday();
+
+  // Intro figures are derived from the same (cached) metric endpoints the charts
+  // read — never hard-coded, so they track whatever dataset is actually loaded.
+  const impressions = byState.data?.total ?? 0;
   const stats = [
-    { value: IMPRESSIONS, label: t("stats.impressions") },
-    { value: STATES, label: t("stats.states") },
-    { value: DEVICES, label: t("stats.devices") },
-    { value: YEARS, label: t("stats.years") },
+    { value: impressions, label: t("stats.impressions") },
+    { value: byState.data?.states.length ?? 0, label: t("stats.states") },
+    { value: byDevice.data?.totalDevices ?? 0, label: t("stats.devices") },
+    { value: byBlackFriday.data?.length ?? 0, label: t("stats.years") },
   ];
 
   return (
@@ -30,7 +34,7 @@ export function ScrollyStage() {
             {t("hero.title")}
           </h1>
           <p className="mt-8 max-w-xl text-muted text-[clamp(1.1rem,1.4vw,1.7rem)]">
-            {t("hero.lead", { count: formatNumber(IMPRESSIONS, locale) })}
+            {t("hero.lead", { count: formatNumber(impressions, locale) })}
           </p>
           <div className="mt-12 flex flex-wrap gap-x-14 gap-y-6 border-t border-line pt-8">
             {stats.map((s) => (
