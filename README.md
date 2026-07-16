@@ -41,54 +41,68 @@ docker-compose.yml + apps/*/Dockerfile
 
 ## Prerequisites
 
-- **Docker** + Docker Compose — enough on its own for the quick start below.
-- For the **local (non-Docker) dev flow**, also:
-  - [Node.js](https://nodejs.org) 20+ and [pnpm](https://pnpm.io) 10 (`corepack enable`)
-  - **JDK 21** (Gradle needs 17+ to run). On macOS: `brew install openjdk@21`.
-    The Taskfile falls back to Homebrew's `openjdk@21`; otherwise export `JAVA_HOME`.
-  - [Task](https://taskfile.dev/installation/) (`brew install go-task`)
+**For the Docker path (recommended): just [Docker Desktop](https://www.docker.com/products/docker-desktop/)** —
+it bundles Docker Compose. Nothing else to install.
 
-Copy the environment file once (used by compose, Flyway, the API, and the seed):
+For **local development** (hot reload) you additionally need Node, a JDK, and
+Task. On macOS with [Homebrew](https://brew.sh):
 
 ```bash
-cp .env.example .env
+brew install --cask docker          # or install Docker Desktop manually
+brew install node openjdk@21 go-task
 ```
 
-## Quick start — Docker (no local JDK/Node needed)
+You do **not** install `pnpm` by hand — `task setup` enables it through Node's
+built-in corepack.
 
-Brings up the whole stack, migrates the schema, and seeds the data:
+## Run it with Docker — recommended, nothing to install but Docker
+
+One command builds and starts **everything** — Postgres, the schema migration, the
+200k-row seed, the API, and the web app. Every dependency (pnpm packages, Gradle,
+the JDK) is installed **inside the containers**, so no local Node/JDK/pnpm and no
+`.env` are required:
 
 ```bash
-docker compose up          # add --build the first time / after code changes
+docker compose up --build
 ```
 
-Order: `postgres` → `flyway` (migrate) → `seed` (loads 200k impressions, geo-joined)
-→ `api` + `web`.
+Let the logs settle — the order is `postgres` → `flyway` (migrate) → `seed`
+(loads 200k geo-joined impressions) → `api` + `web` — then open:
 
-- Web: <http://localhost:3000>
-- API health: <http://localhost:8080/actuator/health>
-- API (proxied via the web server): <http://localhost:3000/api/…>
+- **Web app → <http://localhost:3000>**
+- API health → <http://localhost:8080/actuator/health>
 
-Tear down (add `-v` to also drop the database volume):
+Stop it (add `-v` to also wipe the database):
 
 ```bash
-docker compose down        # or: docker compose down -v
+docker compose down                 # docker compose down -v  resets all data
 ```
 
-## Local development — Task
+## Local development — hot reload
 
-The everyday flow, with **hot reload on both ends** (Vite HMR for the web, Spring
-DevTools auto-restart for the API):
+For iterating on the code, with Vite HMR (web) and Spring DevTools (API). Run
+these **in order** — the first step installs everything and creates `.env`:
 
 ```bash
-task up          # start PostgreSQL
-task migrate     # apply Flyway migrations
-task seed        # load states + impressions (idempotent; re-run any time)
-task dev         # run web + api together with hot reload
+task setup       # once: create .env + install all JS dependencies
+task up          # start PostgreSQL (in Docker)
+task migrate     # apply the schema (Flyway)
+task seed        # load states + 200k impressions (idempotent; re-run any time)
+task dev         # start web + API together, both with hot reload
 ```
 
-- Web (Vite dev server): <http://localhost:5173> — proxies `/api` to the backend
-- API: <http://localhost:8080>
+Or all at once:
+`task setup && task up && task migrate && task seed && task dev`
+
+Then open:
+
+- **Web (Vite) → <http://localhost:5173>** — proxies `/api` to the API
+- API → <http://localhost:8080>
+
+`task dev` re-runs `pnpm install` first, so it never starts on a missing
+`node_modules`. The Gradle side downloads its own dependencies and finds a JDK 21
+(the Taskfile falls back to Homebrew's `openjdk@21`, otherwise export `JAVA_HOME`)
+automatically on first run.
 
 Other targets:
 
@@ -148,8 +162,9 @@ day) are a presentation concern.
 3. Impressions per US state (the interactive map — the centrepiece)
 4. Black Friday impression rate through the years (lift vs. the annual daily mean)
 
-The current build ships the platform + app shell; the metric views land as
-subsequent vertical slices (see `openspec/`).
+All four are implemented — an interactive US choropleth as the centrepiece plus
+three bespoke charts — served from pre-aggregated rollups so query latency stays
+flat as the dataset grows (see [`DECISIONS.md`](./DECISIONS.md), tested at 200M).
 
 ## Testing
 

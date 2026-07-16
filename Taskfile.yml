@@ -9,6 +9,19 @@ env:
     sh: echo "${JAVA_HOME:-/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home}"
 
 tasks:
+  setup:
+    desc: One-time local setup — create .env and install all JS dependencies
+    cmds:
+      - '[ -f .env ] || cp .env.example .env'
+      - corepack enable || true
+      - pnpm install
+      - 'echo "Setup done. Next: task up && task migrate && task seed && task dev"'
+
+  install:
+    internal: true
+    cmds:
+      - pnpm install
+
   up:
     desc: Start PostgreSQL
     cmds:
@@ -41,6 +54,7 @@ tasks:
   dev:web:
     internal: true
     dir: apps/web
+    deps: [install] # never start Vite without node_modules
     cmds: [pnpm dev]
 
   dev:api:
